@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parking Management System</title>
+<style>
+  :root {
+    --asphalt: #161616;
+    --panel: #1e1e1e;
+    --panel-hi: #262626;
+    --line: #333;
+    --stripe: #ffc93c;
+    --green: #2ecc71;
+    --red: #ff453a;
+    --amber: #ffb020;
+    --text: #f2f2f0;
+    --muted: #8a8a84;
+    --paper: #f3ecd8;
+    --mono: ui-monospace, "SFMono-Regular", Consolas, "Courier New", monospace;
+    --sans: -apple-system, "Segoe UI", Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--asphalt);
+    color: var(--text);
+    font-family: var(--sans);
+  }
+
+  .hazard {
+    height: 6px;
+    background: repeating-linear-gradient(45deg, var(--stripe), var(--stripe) 12px, #1a1a1a 12px, #1a1a1a 24px);
+  }
+
+  header {
+    padding: 22px 24px 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  header h1 {
+    margin: 0;
+    font-size: 20px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 800;
+  }
+  header p {
+    margin: 6px 0 0;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  nav {
+    display: flex;
+    gap: 2px;
+    background: var(--panel);
+    padding: 0 20px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--line);
+  }
+  nav button {
+    border: none;
+    background: none;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 14px 16px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+  }
+  nav button.active { color: var(--stripe); border-bottom-color: var(--stripe); }
+  nav button:hover { color: var(--text); }
+
+  main { max-width: 1080px; margin: 0 auto; padding: 28px 20px 60px; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  h2 {
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 18px;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 18px 20px;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 2px;
+    background: var(--line);
+    margin-bottom: 24px;
+    border: 1px solid var(--line);
+  }
+  .stat {
+    background: var(--panel);
+    padding: 16px 18px;
+    border-top: 3px solid var(--stripe);
+  }
+  .stat.green { border-top-color: var(--green); }
+  .stat.red { border-top-color: var(--red); }
+  .stat.amber { border-top-color: var(--amber); }
+  .stat-value { font-family: var(--mono); font-size: 26px; font-weight: 700; }
+  .stat-label { font-family: var(--mono); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 720px) { .two-col { grid-template-columns: 1fr; } }
+
+  .form-row { margin-bottom: 14px; }
+  label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  input, select {
+    width: 100%;
+    background: var(--asphalt);
+    border: 1px solid var(--line);
+    color: var(--text);
+    padding: 10px;
+    font-family: var(--mono);
+    font-size: 13px;
+    border-radius: 2px;
+  }
+  input:focus, select:focus { outline: 2px solid var(--stripe); outline-offset: 1px; }
+
+  .btn {
+    background: var(--stripe);
+    color: #1a1a1a;
+    border: none;
+    font-family: var(--mono);
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-size: 12px;
+    padding: 11px 18px;
+    border-radius: 2px;
+    cursor: pointer;
+  }
+  .btn:hover { background: #ffd666; }
+  .btn.exit { background: var(--red); color: #fff; }
+  .btn.exit:hover { background: #ff6259; }
+
+  .stub {
+    background: var(--paper);
+    color: #2a2418;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    padding: 18px 16px;
+    border-radius: 2px;
+    white-space: pre-wrap;
+    min-height: 90px;
+    background-image:
+      radial-gradient(circle at 0 0, transparent 7px, var(--paper) 7.5px),
+      radial-gradient(circle at 100% 0, transparent 7px, var(--paper) 7.5px);
+    border-bottom: 3px dashed #cfc7ac;
+  }
+  .stub.error { background: #2a1414; color: var(--red); border-bottom-color: #4a2222; }
+
+  .zone-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 22px 0 8px;
+  }
+  .zone-label:first-child { margin-top: 0; }
+  .slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(66px, 1fr)); gap: 6px; }
+  .slot {
+    background: var(--panel-hi);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 10px 4px 8px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .led { width: 8px; height: 8px; border-radius: 50%; margin: 0 auto 6px; }
+  .slot.free .led { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .slot.occupied .led { background: var(--red); box-shadow: 0 0 6px var(--red); }
+
+  .legend { display: flex; gap: 18px; margin-bottom: 14px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .led { margin: 0; }
+
+  table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12.5px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; font-weight: 600; }
+
+  .list-item { font-family: var(--mono); font-size: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .empty { font-family: var(--mono); font-size: 12px; color: var(--muted); padding: 6px 0; }
+</style>
+</head>
+<body>
+
+<div class="hazard"></div>
+<header>
+  <h1>Parking Management System</h1>
+  <p>gate control &amp; bay tracking</p>
+</header>
+
+<nav>
+  <button class="tab-btn active" data-page="dashboard">Dashboard</button>
+  <button class="tab-btn" data-page="entry">Entry</button>
+  <button class="tab-btn" data-page="exit">Exit</button>
+  <button class="tab-btn" data-page="slots">Bays</button>
+  <button class="tab-btn" data-page="queue">Queue / Log</button>
+</nav>
+
+<main>
+
+  <section id="dashboard" class="page active">
+    <h2>Dashboard</h2>
+    <div class="stats-grid">
+      <div class="stat"><div class="stat-value" id="stat-total">0</div><div class="stat-label">Total Bays</div></div>
+      <div class="stat red"><div class="stat-value" id="stat-occupied">0</div><div class="stat-label">Occupied</div></div>
+      <div class="stat green"><div class="stat-value" id="stat-available">0</div><div class="stat-label">Available</div></div>
+      <div class="stat amber"><div class="stat-value" id="stat-waiting">0</div><div class="stat-label">Waiting</div></div>
+      <div class="stat"><div class="stat-value" id="stat-revenue">₹0</div><div class="stat-label">Revenue</div></div>
+    </div>
+    <div class="panel">
+      <table>
+        <thead><tr><th>Ticket</th><th>Vehicle</th><th>Owner</th><th>Type</th><th>Bay</th><th>Entry</th></tr></thead>
+        <tbody id="parked-table-body"></tbody>
+      </table>
+      <p class="empty" id="parked-empty-msg">No vehicles parked.</p>
+    </div>
+  </section>
+
+  <section id="entry" class="page">
+    <h2>Vehicle Entry</h2>
+    <div class="two-col">
+      <div class="panel">
+        <div class="form-row">
+          <label>Vehicle Number</label>
+          <input type="text" id="entry-plate" placeholder="UP32AB1234">
+        </div>
+        <div class="form-row">
+          <label>Owner Name</label>
+          <input type="text" id="entry-owner" placeholder="Full name">
+        </div>
+        <div class="form-row">
+          <label>Vehicle Type</label>
+          <select id="entry-type">
+            <option value="BIKE">Bike — ₹10/hr</option>
+            <option value="CAR" selected>Car — ₹30/hr</option>
+            <option value="SUV">SUV — ₹45/hr</option>
+            <option value="TRUCK">Truck — ₹60/hr</option>
+          </select>
+        </div>
+        <button class="btn" onclick="handleParkVehicle()">Issue Ticket</button>
+      </div>
+      <div class="stub" id="entry-output">— ticket prints here —</div>
+    </div>
+  </section>
+
+  <section id="exit" class="page">
+    <h2>Vehicle Exit</h2>
+    <div class="two-col">
+      <div class="panel">
+        <div class="form-row">
+          <label>Ticket ID</label>
+          <input type="text" id="exit-ticket" placeholder="TKT-4F9K-2XQ7">
+        </div>
+        <div class="form-row">
+          <label>Vehicle Number</label>
+          <input type="text" id="exit-plate" placeholder="UP32AB1234">
+        </div>
+        <button class="btn exit" onclick="handleExitVehicle()">Process Exit</button>
+      </div>
+      <div class="stub" id="exit-output">— receipt prints here —</div>
+    </div>
+  </section>
+
+  <section id="slots" class="page">
+    <h2>Bays</h2>
+    <div class="legend">
+      <span><span class="led" style="background:var(--green);box-shadow:0 0 6px var(--green)"></span>Free</span>
+      <span><span class="led" style="background:var(--red);box-shadow:0 0 6px var(--red)"></span>Occupied</span>
+    </div>
+    <div id="slot-zones"></div>
+  </section>
+
+  <section id="queue" class="page">
+    <h2>Queue / Log</h2>
+    <div class="two-col">
+      <div class="panel">
+        <div class="zone-label" style="margin-top:0">Waiting queue</div>
+        <div id="queue-list"></div>
+        <p class="empty" id="queue-empty-msg">Queue is empty.</p>
+      </div>
+      <div class="panel">
+        <div class="zone-label" style="margin-top:0">Recent activity</div>
+        <div id="history-list"></div>
+        <p class="empty" id="history-empty-msg">No activity yet.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+// Rates per vehicle type (₹/hr)
+const HOURLY_RATE = { BIKE: 10, CAR: 30, SUV: 45, TRUCK: 60 };
+
+// Bay inventory — array of { id, type, status, vehiclePlate }
+let slots = [];
+function createSlots(type, count, prefix) {
+  for (let i = 1; i <= count; i++) slots.push({ id: prefix + i, type, status: "free", vehiclePlate: null });
+}
+createSlots("BIKE", 6, "B");
+createSlots("CAR", 8, "C");
+createSlots("SUV", 4, "S");
+createSlots("TRUCK", 2, "T");
+
+// Active sessions — object used as a hash map: plate -> record (O(1) avg lookup)
+let parkedVehicles = {};
+
+// Ticket lookup — object used as a hash map: ticketId -> plate (O(1) avg lookup)
+let ticketMap = {};
+
+// Unambiguous charset (no 0/O/1/I) so a printed ticket is easy to read back
+const TICKET_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+function generateTicketId() {
+  let id;
+  do {
+    let raw = "";
+    for (let i = 0; i < 8; i++) raw += TICKET_CHARS[Math.floor(Math.random() * TICKET_CHARS.length)];
+    id = "TKT-" + raw.slice(0, 4) + "-" + raw.slice(4);
+  } while (ticketMap[id]); // guard against the rare collision
+  return id;
+}
+
+// Waiting list — array used as a FIFO queue
+let waitingQueue = [];
+
+// Completed sessions — array used as a stack (unshift = newest first)
+let history = [];
+
+let totalRevenue = 0;
+
+function findFreeSlot(type) {
+  return slots.find(s => s.type === type && s.status === "free") || null;
+}
+
+function parkVehicle(plate, owner, type) {
+  plate = plate.trim().toUpperCase();
+  if (parkedVehicles[plate]) {
+    return { success: false, message: plate + " is already parked." };
+  }
+
+  const slot = findFreeSlot(type);
+  if (!slot) {
+    waitingQueue.push({ plate, owner, type });
+    return { success: false, queued: true, position: waitingQueue.length,
+      message: "No free " + type + " bay. Queued at position " + waitingQueue.length + "." };
+  }
+
+  slot.status = "occupied";
+  slot.vehiclePlate = plate;
+  const ticketId = generateTicketId();
+  const record = { plate, owner, type, slotId: slot.id, entryTime: new Date(), ticketId };
+  parkedVehicles[plate] = record;
+  ticketMap[ticketId] = plate;
+  return { success: true, slot, record };
+}
+
+function exitVehicle(ticketId, plate) {
+  ticketId = ticketId.trim().toUpperCase();
+  plate = plate.trim().toUpperCase();
+
+  const mappedPlate = ticketMap[ticketId];
+  if (!mappedPlate) return { success: false, message: "Ticket " + ticketId + " not found or already used." };
+  if (mappedPlate !== plate) return { success: false, message: "Ticket ID does not match that vehicle number." };
+
+  const record = parkedVehicles[plate];
+  if (!record) return { success: false, message: "No active session for this ticket." };
+
+  const exitTime = new Date();
+  const minutes = Math.max(1, Math.round((exitTime - record.entryTime) / 60000));
+  const hours = Math.ceil(minutes / 60);
+  const fee = hours * HOURLY_RATE[record.type];
+
+  const slot = slots.find(s => s.id === record.slotId);
+  if (slot) { slot.status = "free"; slot.vehiclePlate = null; }
+
+  delete parkedVehicles[plate];
+  delete ticketMap[ticketId];
+  history.unshift({ ...record, exitTime, minutes, hours, fee });
+  totalRevenue += fee;
+
+  let promoted = null;
+  if (waitingQueue.length > 0 && waitingQueue[0].type === record.type) {
+    const next = waitingQueue.shift();
+    parkVehicle(next.plate, next.owner, next.type);
+    promoted = next;
+  }
+
+  return { success: true, ticketId, plate, minutes, hours, fee, promoted };
+}
+
+// --- UI ---
+
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.getElementById(btn.dataset.page).classList.add("active");
+    btn.classList.add("active");
+    renderAll();
+  });
+});
+
+function handleParkVehicle() {
+  const plate = document.getElementById("entry-plate").value;
+  const owner = document.getElementById("entry-owner").value;
+  const type = document.getElementById("entry-type").value;
+  const out = document.getElementById("entry-output");
+
+  if (!plate.trim() || !owner.trim()) {
+    out.classList.add("error");
+    out.textContent = "Vehicle number and owner name are required.";
+    return;
+  }
+
+  const r = parkVehicle(plate, owner, type);
+  if (r.success) {
+    out.classList.remove("error");
+    out.textContent =
+      "TICKET\n------------------\n" +
+      "Ticket ID : " + r.record.ticketId + "  (keep this — required at exit)\n" +
+      "Vehicle   : " + r.record.plate + "\n" +
+      "Owner     : " + r.record.owner + "\n" +
+      "Type      : " + r.record.type + "\n" +
+      "Bay       : " + r.slot.id + "\n" +
+      "Entry     : " + r.record.entryTime.toLocaleString() + "\n" +
+      "Rate      : ₹" + HOURLY_RATE[r.record.type] + "/hr";
+    document.getElementById("entry-plate").value = "";
+    document.getElementById("entry-owner").value = "";
+  } else {
+    out.classList.add("error");
+    out.textContent = r.message;
+  }
+  renderAll();
+}
+
+function handleExitVehicle() {
+  const ticketId = document.getElementById("exit-ticket").value;
+  const plate = document.getElementById("exit-plate").value;
+  const out = document.getElementById("exit-output");
+
+  if (!ticketId.trim() || !plate.trim()) {
+    out.classList.add("error");
+    out.textContent = "Ticket ID and vehicle number are both required.";
+    return;
+  }
+
+  const r = exitVehicle(ticketId, plate);
+  if (r.success) {
+    out.classList.remove("error");
+    let text =
+      "RECEIPT\n------------------\n" +
+      "Ticket   : " + r.ticketId + "\n" +
+      "Vehicle  : " + r.plate + "\n" +
+      "Duration : " + r.minutes + " min (billed " + r.hours + " hr)\n" +
+      "TOTAL    : ₹" + r.fee;
+    if (r.promoted) text += "\n\n" + r.promoted.plate + " promoted from queue.";
+    out.textContent = text;
+    document.getElementById("exit-ticket").value = "";
+    document.getElementById("exit-plate").value = "";
+  } else {
+    out.classList.add("error");
+    out.textContent = r.message;
+  }
+  renderAll();
+}
+
+function renderAll() {
+  const total = slots.length;
+  const occupied = slots.filter(s => s.status === "occupied").length;
+
+  document.getElementById("stat-total").textContent = total;
+  document.getElementById("stat-occupied").textContent = occupied;
+  document.getElementById("stat-available").textContent = total - occupied;
+  document.getElementById("stat-waiting").textContent = waitingQueue.length;
+  document.getElementById("stat-revenue").textContent = "₹" + totalRevenue;
+
+  const tbody = document.getElementById("parked-table-body");
+  tbody.innerHTML = "";
+  const plates = Object.keys(parkedVehicles);
+  document.getElementById("parked-empty-msg").style.display = plates.length ? "none" : "block";
+  plates.forEach(plate => {
+    const v = parkedVehicles[plate];
+    const row = document.createElement("tr");
+    row.innerHTML = `<td>${v.ticketId}</td><td>${v.plate}</td><td>${v.owner}</td><td>${v.type}</td><td>${v.slotId}</td><td>${v.entryTime.toLocaleTimeString()}</td>`;
+    tbody.appendChild(row);
+  });
+
+  const zones = document.getElementById("slot-zones");
+  zones.innerHTML = "";
+  ["BIKE", "CAR", "SUV", "TRUCK"].forEach(type => {
+    const zoneSlots = slots.filter(s => s.type === type);
+    const free = zoneSlots.filter(s => s.status === "free").length;
+    const label = document.createElement("div");
+    label.className = "zone-label";
+    label.textContent = type + " — " + free + "/" + zoneSlots.length + " free";
+    zones.appendChild(label);
+
+    const grid = document.createElement("div");
+    grid.className = "slot-grid";
+    zoneSlots.forEach(slot => {
+      const tile = document.createElement("div");
+      tile.className = "slot " + slot.status;
+      tile.title = slot.status === "occupied" ? "Occupied: " + slot.vehiclePlate : "Free";
+      tile.innerHTML = `<div class="led"></div>${slot.id}`;
+      grid.appendChild(tile);
+    });
+    zones.appendChild(grid);
+  });
+
+  const queueDiv = document.getElementById("queue-list");
+  queueDiv.innerHTML = "";
+  document.getElementById("queue-empty-msg").style.display = waitingQueue.length ? "none" : "block";
+  waitingQueue.forEach((v, i) => {
+    const item = document.createElement("div");
+    item.className = "list-item";
+    item.textContent = (i + 1) + ". " + v.plate + " (" + v.type + ") — " + v.owner;
+    queueDiv.appendChild(item);
+  });
+
+  const historyDiv = document.getElementById("history-list");
+  historyDiv.innerHTML = "";
+  document.getElementById("history-empty-msg").style.display = history.length ? "none" : "block";
+  history.forEach(h => {
+    const item = document.createElement("div");
+    item.className = "list-item";
+    item.textContent = h.ticketId + " · " + h.plate + " (" + h.type + ") · bay " + h.slotId + " · " + h.hours + "hr · ₹" + h.fee + " · " + h.exitTime.toLocaleTimeString();
+    historyDiv.appendChild(item);
+  });
+}
+
+renderAll();
+</script>
+
+</body>
+</html>
