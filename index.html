@@ -318,7 +318,7 @@
 </main>
 
 <script>
-// Rates per vehicle type (₹/hr)
+
 const HOURLY_RATE = { BIKE: 10, CAR: 30, SUV: 45, TRUCK: 60 };
 
 // Bay inventory — array of { id, type, status, vehiclePlate }
@@ -417,7 +417,7 @@ function exitVehicle(ticketId, plate) {
   return { success: true, ticketId, plate, minutes, hours, fee, promoted };
 }
 
-// --- UI ---
+
 
 document.querySelectorAll(".tab-btn").forEach(btn => {
   btn.addEventListener("click", () => {
